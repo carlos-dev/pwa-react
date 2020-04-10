@@ -1,18 +1,37 @@
 import React, { Component } from "react";
 import axios from "axios";
 
-import { Header, Repositories, GlobalStyle } from "./styles";
+import { Header, Repositories, GlobalStyle, Offline } from "./styles";
 
 export class App extends Component {
   state = {
+    online: navigator.onLine,
     newRepoInput: "",
-    repositories: JSON.parse(localStorage.getItem("repositories")),
+    repositories: JSON.parse(localStorage.getItem("repositories")) || [],
+  };
+
+  componentDidMount() {
+    window.addEventListener("online", this.handleNetworkChange);
+    window.addEventListener("offline", this.handleNetworkChange);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("online", this.handleNetworkChange);
+    window.removeEventListener("offline", this.handleNetworkChange);
+  }
+
+  handleNetworkChange = () => {
+    this.setState({ online: navigator.onLine });
   };
 
   addRepository = async () => {
     const { newRepoInput } = this.state;
 
     if (!newRepoInput) return;
+
+    if (!this.state.online) {
+      alert("Você está offline :/");
+    }
 
     const response = await axios.get(
       `https://api.github.com/repos/${newRepoInput}`
@@ -30,6 +49,8 @@ export class App extends Component {
   };
 
   render() {
+    console.log(this.state.online);
+
     return (
       <>
         <div className="App">
@@ -56,6 +77,8 @@ export class App extends Component {
               </li>
             ))}
           </Repositories>
+
+          {!this.state.online && <Offline>Você está offline</Offline>}
         </div>
       </>
     );
